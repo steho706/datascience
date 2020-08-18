@@ -21,6 +21,8 @@ RUN dotnet tool install -g --add-source "https://dotnet.myget.org/F/dotnet-try/a
 ENV PATH="$PATH:/root/.dotnet/tools"
 RUN dotnet interactive jupyter install
 
+RUN python3 -m pip install -U jupyter matplotlib numpy pandas scipy scikit-learn
+
 EXPOSE 8888
 
 RUN echo "#!/bin/sh" > entrypoint.sh && \

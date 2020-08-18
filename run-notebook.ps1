@@ -1,21 +1,24 @@
 #!/usr/bin/pwsh
-param ($dataFolder = '')
-
+param ( $dataFolder = '',
+        $dockerFile = 'Dockerfile',
+        $openBrowser = $False)
 
 function BuildNotebook($tag) {
     Write-Host "Building notebook"
-    docker build . -t $tag 2>&1 | Out-Null
+    docker build -f $dockerFile . -t $tag 2>&1 | Out-Null
 }
 function StartNotebook($tag) {
     if ($dataFolder -ne '')
     {
         $pathToMount = ((Resolve-Path $dataFolder).Path | Out-String).Replace("\", "/").Trim().TrimEnd('/')
         Write-Host "Starting jupyter notebook with folder ${pathToMount} as datafolder"
-        $containerId = (docker run --rm -d -p 8888:8888 -v ${pathToMount}:/home/notebook/ $tag) 2>&1
+        $containerId = (docker run --rm --name jupyter_notebook -d -p 8888:8888 -v ${pathToMount}:/home/notebook/ $tag) 2>&1
     } else {
         Write-Host "Starting jupyter notebook with no mounted datafolder"
-        $containerId = (docker run --rm -d -p 8888:8888 $tag)  2>&1
+        $containerId = (docker run --rm --name jupyter_notebook -d -p 8888:8888 $tag)  2>&1
     }
+
+    Write-Host $containerId
 
     return $containerId
 }
@@ -36,11 +39,12 @@ Try {
     # wait for 5 seconds and then try to extract browser url from container logs
     Start-Sleep 5
 
-    # get container logs
-    $url = ExtractUrl($containerId)
-
-    # open url
-    Start-Process $url
+    if ($openBrowser -eq $True) {
+        # get container logs
+        $url = ExtractUrl($containerId)
+        # open url
+        Start-Process $url
+    }
 
     # keep script active until stopped with Ctrl-C
     while ($True) 
